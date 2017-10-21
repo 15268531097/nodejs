@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>分类管理</title>
+	<link rel="stylesheet" type="text/css" href="../easyui/themes/default/easyui.css" />
+	<link rel="stylesheet" type="text/css" href="../css/xu.css" />
+	<link rel="stylesheet" type="text/css" href="../css/icon.css" />
+	<script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+	<script type="text/javascript" src="../easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script src="../js/jquery.serializejson.min.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body>
+	<div class="easyui-layout" data-options="fit:true">
+        <div data-options="region:'west',split:true" title="目录" style="width:200px;">
+        	
+				<ul id="tt"></ul>
+				
+        </div>
+        <div data-options="region:'center',title:'分类管理',iconCls:'icon-ok'">
+
+				<div class="xu-toolbar-button">
+					<a href="#" class="easyui-linkbutton" iconCls="icon-add" onclick="pop(1)" plain="true">添加根节点</a>
+
+					<a class="l-btn-left l-btn-icon-left" href="javascript:void(0)" onclick="pop(2)">
+						<span class="l-btn-text">添加子节点</span>
+						<span class="l-btn-icon icon-add">&nbsp;</span>
+					</a>
+					<a class="l-btn-left l-btn-icon-left" href="javascript:void(0)" onclick="pop(3)">
+						<span class="l-btn-text">修改</span>
+						<span class="l-btn-icon icon-edit">&nbsp;</span>
+					</a>
+					<a class="l-btn-left l-btn-icon-left" href="javascript:void(0)" onclick="remove()">
+						<span class="l-btn-text">删除</span>
+						<span class="l-btn-icon icon-remove">&nbsp;</span>
+					</a>
+				</div>	
+
+            	<form id="ff" class="easyui-form" method="post" data-options="novalidate:true">
+					<input type="hidden" name="parentId" id="parentId"/>
+					<input type="hidden" name="text" id="text"/>
+		        </form>
+        </div>
+    </div>
+    <div id="xu-dialog-2" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'" style="width:400px; padding:10px;">
+		<input id="srbox" class="easyui-textbox" name="txt" style="width:100%;" data-options="label:'分类名称:',required:true">
+	</div>
+    
+
+    <script>
+    	var nodeId = null;
+    	var t_dialog = $('#xu-dialog-2');
+    	var text = $('#text');
+    	var srbox = $('#srbox');
+    	$('#tt').tree({//引入tree
+    		animate:true,
+		    url:'http://localhost:3000/cate/list',
+		    method:'post'
+		    onClick: function(node){
+				$("#parentId").val(node._id);
+			}
+		});
+		function remove(){
+			var node = $('#tt').tree('getSelected');//获取选中的			
+			var id = node._id;
+			
+			$.ajax({
+				type:"delete",
+				url:"http://localhost:3000/cate/data/"+id
+			}).then(function(res){
+				$("#tt").tree('reload');
+			});
+		}
+		function addNode(){
+			nodeId = '';	//为什么呢?
+		}
+		function addRootNode(){
+			$("#parentId").val(null);
+			nodeId = null;
+		}
+		
+		function editNode(){
+			var node = $('#tt').tree('getSelected');
+			if(node !== null){
+				nodeId = node._id;
+				$("#ff").form('load',node);
+			}else{
+				alert('未选中任何分类');
+			}
+			
+		}
+        function submitForm(){
+	            $('#ff').form('submit',{
+	                onSubmit:function(){
+						if($(this).form('enableValidation').form('validate')){
+							// 如果nodeId存在，不为null，那么，表单提交就是提交到修改的地址，
+							// 否则，则是新增
+							var postUrl;
+							if(nodeId!==null){
+								// edit
+								 postUrl = 'http://localhost:3000/cate/data/' + nodeId; 
+							}else{
+								// add
+								 postUrl = 'http://localhost:3000/cate/data'; 
+							}
+							text.val(srbox.val());
+							var formData = $('#ff').serializeJSON();
+							clearForm();
+							if(formData.parentId.length === 0){
+								delete formData.parentId;
+							}
+							$.ajax({
+								type:"post",
+								url:postUrl, 
+								data: formData
+							}).then(function(res){
+								t_dialog.dialog('close');
+								$.messager.alert('信息提示','操作成功','info');
+								$("#tt").tree('reload');
+							});
+						}else{
+							alert('表单验证失败');
+						}
+						text.val('');
+						return false;
+	                }
+	            });
+	        }
+        function clearForm(){
+            $('#ff').form('clear');
+        }
+
+        function pop(index){
+        	if(index==1){
+        		addRootNode();
+        	}else if(index==2){
+        		addNode();
+        	}else if(index==3){
+        		editNode();
+        	}else{
+        		$.message.alert('错误提示','操作有误','info');
+        	}
+        	t_dialog.dialog({
+				closed: false,
+				modal:true,
+	            title: "请输入",
+	            buttons: [{
+	                text: '确定',
+	                iconCls: 'icon-ok',
+	                handler: submitForm
+	            }, {
+	                text: '取消',
+	                iconCls: 'icon-cancel',
+	                handler: function () {
+	                    t_dialog.dialog('close');                   
+	                }
+	            }]
+	        });
+        }
+    </script>
+</body>
+</html>

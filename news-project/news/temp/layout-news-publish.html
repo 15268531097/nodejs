@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>新闻发布</title>
+	<link rel="stylesheet" type="text/css" href="../easyui/themes/default/easyui.css" />
+	<link rel="stylesheet" type="text/css" href="../css/xu.css" />
+	<link rel="stylesheet" type="text/css" href="../css/icon.css" />
+	<script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+	<script type="text/javascript" src="../easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script src="../js/jquery.serializejson.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../js/xheditor/xheditor-1.2.2.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../js/xheditor/xheditor_lang/zh-cn.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../js/addTab.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<style>
+	tr{margin-top:20px;}
+</style>
+<body>
+	<div class="easyui-layout" data-options="fit:true">
+		<div class="wrap" style="width:850px;margin:0 auto;padding-top:20px;">
+			<form id="xu-form-2" method="post" style="height:100%;">
+				<input type="hidden" name="user_id" id="user_id"/>
+		        <table cellpadding="5" style="width:100%">
+	    		<tr>
+	    			<td>标题:</td>
+	    			<td><input class="easyui-textbox" type="text" name="title" style="width:150px;" data-options="required:true"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>作者:</td>
+	    			<td><input class="easyui-textbox" type="text" name="author" style="width:150px;" data-options="required:true"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>副标题:</td>
+	    			<td><input class="easyui-textbox" type="text" name="subtitle" style="width:150px;" data-options="required:true"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>发布日期:</td>
+	    			<td><input class="easyui-datetimebox" name="newsdate" style="width:200px;" data-options="required:true"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td>所属类型:</td>
+	    			<td><input id="cc" class="easyui-combotree" name="type_id" style="width:200px;" data-options="required:true"></input></td>
+	    		</tr>
+	    		<tr>
+	    			<td valign="top">新闻内容:</td>
+	    			<td><textarea cols="120" rows="30" id="content" name="content" style="resize: none" data-options="required:true"></textarea></td>
+	    		</tr>
+	    	</table>
+	    	</form>
+	    	<div style="text-align:center;padding:5px 0">
+	            <a href="javascript:void(0)" id="mysubmit" class="easyui-linkbutton" onclick="submitForm()" data-options="iconCls:'icon-accept'" style="width:80px;margin:20px;">提交</a>
+	            <a href="javascript:void(0)" class="easyui-linkbutton" onclick="clearForm()" style="width:80px">清空</a>
+	        </div>
+	    	<script type="text/javascript">
+				var t_form = $('#xu-form-2');
+				var news_id;
+				news_id = GetQueryString('news_id') || null;
+				if(news_id){
+					$.ajax({
+					url:'http://localhost:3000/news/list',
+					type:'post',
+					data:{news_id:news_id}
+					}).then(function(data){
+						t_form.form('load',data);
+					});
+				}
+				$(pageInit);
+				getUserId($('#user_id'));
+
+				$('#cc').combotree({
+					url:'http://localhost:3000/cate/list',
+					method:'post',
+					loadFilter:function(data){
+						return data;
+					}
+				})
+
+				function GetQueryString(name)	//获取地址栏参数  name为参数名
+				{
+				     var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+				     var r = window.location.search.substr(1).match(reg);
+				     if(r!=null)return  unescape(r[2]); return null;
+				}
+	    		
+				function pageInit()
+				{
+					$('#content').xheditor({
+						html5Upload:false,
+						upMultiple:'1',
+
+						upImgUrl:"http://localhost:3000/uploadImg",
+						upImgExt:"jpg,jpeg,gif,png"
+					});
+				}
+				function submitForm(){
+					var dataUrl = '';
+					if(news_id){
+						dataUrl = "http://localhost:3000/news/data/" + news_id;
+					}else{
+						dataUrl = "http://localhost:3000/news/data"
+					}
+					t_form.form('submit',{
+						onSubmit:function(){
+							if ($(this).form('enableValidation').form('validate')){
+							$.ajax({
+								type:"post",
+								url:dataUrl,
+								data:t_form.serializeJSON()
+							}).then(function(res){
+								if(res){
+									$.messager.confirm('信息提示','操作成功！！是否继续?',right=>{
+										if(right){
+											
+										}else{
+											addTab('查看新闻','../temp/layout-news-list.html','icon-tip','1');
+										}
+										clearForm();
+										getUserId($('#user_id'));	//特别关键！！！
+										//当清空了表单所有内容后，隐藏文本域的userId也会被清除，如果不重新加载
+										//后台就拿不到userId，会一直报错！！
+									})
+								}else{
+									$.messager.alert('信息提示','提交失败！','info');
+								}
+							});
+				            }else{
+				            	alert('no')
+				            }
+				            return false; 		//用return false就可以解决掉表单重复提交的问题
+						}
+					})
+				}
+
+				function clearForm(){
+		            t_form.form('clear');
+		            $('#content').val('');
+		        }
+		        function getUserId(htext){
+		        	var userId = '59cc546f95f33c1a6c50aba7';
+		        	htext.val(userId);
+		        }
+			</script>
+
+		</div>
+	</div>
+</body>
+</html>

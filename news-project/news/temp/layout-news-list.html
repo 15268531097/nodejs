@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>新闻管理</title>
+	<link rel="stylesheet" type="text/css" href="../easyui/themes/default/easyui.css" />
+	<link rel="stylesheet" type="text/css" href="../css/xu.css" />
+	<link rel="stylesheet" type="text/css" href="../css/icon.css" />
+	<script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+	<script type="text/javascript" src="../easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../easyui/locale/easyui-lang-zh_CN.js"></script>
+	<script src="../js/jquery.serializejson.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="../js/addTab.js" type="text/javascript" charset="utf-8"></script>
+</head>
+<body>
+	<div class="easyui-layout" data-options="fit:true">
+		<div data-options="region:'west',split:true" title="新闻目录" style="width:200px;">
+        	
+				<ul id="tt"></ul>
+				
+        </div>
+        <div data-options="region:'center',title:'新闻管理',iconCls:'icon-ok'">
+			<div id="xu-toolbar-2">
+		        <div class="xu-toolbar-button">
+		            <a href="#" class="easyui-linkbutton" iconCls="icon-add" onclick="addTab('发布新闻','../temp/layout-news-publish.html','icon-tip','1')" plain="true">新闻发布</a>
+		            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="removeData()" plain="true">删除新闻</a>
+		        </div>
+		    </div>
+		    <!-- End of toolbar -->
+		    <table id="xu-datagrid-2" class="easyui-datagrid" toolbar="#xu-toolbar-2"></table>
+        </div>
+    </div>
+    <script>
+    	var cateid = [];	//设置全局
+    	$('#tt').tree({//引入tree
+    		animate:true,
+		    url:'http://localhost:3000/cate/list',
+		    method:'post',
+		    onClick:function(node){
+		    	var temparr = [];
+		    	temparr.push(node);	//由于必须操作数组，而一开始是个对象，需做一个转换
+		    	reserve(temparr);
+		    	initList(cateid);
+
+		    }
+		});
+		function reserve(node){	//递归操作，如果node节点下面有子节点，则将子节点的id也放入
+			for(var i = 0;i<node.length;i++){
+				cateid.push(node[i]._id);
+				if(node[i].children){
+					reserve(node[i].children);
+				}
+			}
+			return ;
+		}
+
+    	function removeData(index){
+			$.messager.confirm('信息提示','确定要删除该记录？', function(result){
+				if(result){
+					var ids = [];
+					if(index !== undefined){
+						$('#xu-datagrid-2').datagrid('selectRow',index);
+						var row = $('#xu-datagrid-2').datagrid('getSelected');
+						ids.push(row._id);
+					}else{
+						var items = $('#xu-datagrid-2').datagrid('getSelections');
+						var ids = [];
+						$(items).each(function(){
+							ids.push(this._id);	
+						});
+					}
+					$.ajax({
+						url:'http://localhost:3000/news/data/'+ids,
+						type:'delete',
+						success:function(data){
+							if(data){
+								$.messager.alert('信息提示','删除成功！','info',function(){
+									$('#xu-datagrid-2').datagrid('reload');
+								});		
+							}
+							else
+							{
+								$.messager.alert('信息提示','删除失败！','info');		
+							}
+						}	
+					});
+					
+				}	
+			});
+		}
+		function initList(cateId){
+			$('#xu-datagrid-2').datagrid({
+				url:'http://localhost:3000/news/list',		
+				pageSize:10,
+				pageList:[5,10,15,20,25],
+				pagination:true,
+				fit:true,
+				fitColumns:true,
+				queryParams:{type_id:cateId},
+				toolbar:'#xu-toolbar-2',
+				columns:[[
+					{ field:'checkbox',checkbox:true},
+					{ field:'title',title:'标题',align:'center'},
+					{ field:'author',title:'作者',align:'center'},
+					{ field:'subtitle',title:'副标题',align:'center'},
+					{ field:'content',title:'内容',align:'center'},
+					{ field:'newsdate',title:'发布时间'},
+					{ field:'user',title:'发布人',align:'center'},
+					{ field:'update',width:60,align:'center',
+						formatter:function(val,row,index){
+							var url = '../temp/layout-news-publish.html?news_id='+row._id;	//${url}要用引号包括
+							var str =	`<a class="l-btn-left l-btn-icon-left" href="javascript:void(0)" onclick="addTab('修改新闻','${url}','icon-tip','1')">
+											<span class="l-btn-text">修改</span>
+											<span class="l-btn-icon icon-edit">&nbsp;</span>
+										</a>
+										`
+							return str;
+						}
+					},
+					{ field:'remove',width:60,align:'center',
+						formatter:function(val,row,index){
+							var str =	`<a class="l-btn-left l-btn-icon-left" href="javascript:void(0)" onclick="removeData(${index})">
+											<span class="l-btn-text">删除</span>
+											<span class="l-btn-icon icon-remove">&nbsp;</span>
+										</a>
+										`
+							return str;
+						}
+					},
+					{ field:'comment',width:100,align:'center',
+						formatter:function(val,row,index){
+							var url = '../temp/layout-news-comment.html?news_id='+row._id;
+							var str =	`<a class="l-btn-left l-btn-icon-left" href="javascript:void(0)" onclick="addTab('查看评论','${url}','icon-book-go','1')">
+											<span class="l-btn-text">查看评论</span>
+											<span class="l-btn-icon icon-book-go">&nbsp;</span>
+										</a>
+										` 
+
+							return str;
+						}
+					}	
+				]]
+			});
+			cateid = [];		//重置id框
+		}
+		
+    </script>
+</body>
+</html>

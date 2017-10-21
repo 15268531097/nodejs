@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta name="copyright" content="All Rights Reserved, Copyright (C) 2017, Xujiamin." />
+		<title>新闻管理系统</title>
+		<link rel="stylesheet" type="text/css" href="easyui/themes/default/easyui.css" />
+		<link rel="stylesheet" type="text/css" href="css/xu.css" />
+		<link rel="stylesheet" type="text/css" href="css/icon.css" />
+		<script type="text/javascript" src="js/jquery-1.8.0.min.js"></script>
+		<script type="text/javascript" src="easyui/jquery.easyui.min.js"></script>
+		<script type="text/javascript" src="easyui/locale/easyui-lang-zh_CN.js"></script>
+	</head>
+	<body class="easyui-layout">
+		<div class="xu-header" data-options="region:'north',border:false">
+	    	<div class="xu-header-left">
+	        	<h1>新闻管理系统</h1>
+	        </div>
+	        <div class="xu-header-right">
+	        	<p><strong class="easyui-tooltip" id="username" title="2条未读消息">七凉呀</strong>，欢迎您！</p>
+	            <p><a href="#">网站首页</a>|<a href="#">支持论坛</a>|<a href="#">帮助中心</a>|<a href="#">安全退出</a></p>
+	        </div>
+    	</div>
+    	<input type="hidden" id="change"/>
+    	<div class="xu-sidebar" data-options="region:'west',border:true,title:'导航菜单'"> 
+	    	<div class="easyui-accordion" data-options="border:false,fit:true"> 
+	        	<div title="快捷菜单" data-options="iconCls:'icon-application-cascade'" style="padding:5px;">  	
+	    			<ul class="easyui-tree xu-side-tree" data-options="animate:true">
+	                	<li iconCls="icon-chart-organisation"><a href="javascript:void(0)" data-icon="icon-chart-organisation" data-link="temp/layout-index.html" iframe="1">菜单导航</a></li>
+	                    <li iconCls="icon-users"><a href="javascript:void(0)" data-icon="icon-users" data-link="temp/layout-userlist.html" iframe="1">用户管理</a></li>
+	                    <li iconCls="icon-tree32"><a href="javascript:void(0)" data-icon="icon-tree32" data-link="temp/layout-cate.html" iframe="1">分类管理</a></li>
+	                    <li iconCls="icon-application">
+	                    	<span>新闻管理</span>
+	                    	<ul>
+	                    		<li iconCls="icon-application-add">
+	                    			<span>
+	                    				<a href="javascript:void(0)" data-icon="icon-application-add" data-link="temp/layout-news-publish.html" iframe="1">发布新闻</a>
+	                    			</span>
+	                    		</li>
+	                    		<li iconCls="icon-application-form">
+	                    			<span>
+	                    				<a href="javascript:void(0)" data-icon="icon-application-form" data-link="temp/layout-news-list.html" iframe="1">查看新闻</a>
+	                    			</span>
+	                    		</li>
+	                    		<li iconCls="icon-comments">
+	                    			<span>
+	                    				<a href="javascript:void(0)" data-icon="icon-comments" data-link="temp/layout-news-comment.html" iframe="1">查看评论</a>
+	                    			</span>
+	                    		</li>
+	                    	</ul>
+	                    </li>
+	                </ul>
+	           </div>
+	        </div>
+	        
+    	</div>
+    	<div class="xu-main" data-options="region:'center'">
+	        <div id="xu-tabs" class="easyui-tabs" data-options="border:false,fit:true">  
+	            <div title="首页" data-options="href:'temp/layout-index.html',closable:false,iconCls:'icon-tip',cls:'pd3'"></div>
+	        </div>
+    	</div>
+    	
+    	<div class="xu-footer" data-options="region:'south',border:true">
+    		&copy; 2017 Xu All Rights Reserved
+    	</div>
+    	
+    	<script type="text/javascript">
+    		$(function(){
+				$('.xu-side-tree a').bind("click",function(){
+					var title = $(this).text();
+					var url = $(this).attr('data-link');
+					var iconCls = $(this).attr('data-icon');
+					var iframe = $(this).attr('iframe')==1?true:false;
+					addTab(title,url,iconCls,iframe);
+				});	
+			})
+		
+			$('#xu-side-tree').tree({
+				url:'temp/menu.json',
+				cache:false,
+				onClick:function(node){
+					var url = node.attributes['url'];
+					if(url==null || url == ""){
+						return false;
+					}
+					else{
+	                    console.log(url);
+						addTab(node.text, url, '', node.attributes['iframe']);
+					}
+				}
+			});
+			$('#xu-tabs').tabs({
+				tools:[{
+					iconCls:'icon-reload',
+					border:false,
+					handler:function(){
+						$('#xu-datagrid').datagrid('reload');
+					}
+				}]
+			});
+			function addTab(title, href, iconCls, iframe){
+				var tabPanel = $('#xu-tabs');
+				if(!tabPanel.tabs('exists',title)){
+					var content = '<iframe scrolling="auto" frameborder="0"  src="'+ href +'" style="width:100%;height:100%;"></iframe>';
+					if(iframe){
+						tabPanel.tabs('add',{
+							title:title,
+							content:content,
+							iconCls:iconCls,
+							fit:true,
+							cls:'pd3',
+							closable:true
+						});
+					}
+					else{
+						tabPanel.tabs('add',{
+							title:title,
+							href:href,
+							iconCls:iconCls,
+							fit:true,
+							cls:'pd3',
+							closable:true
+						});
+					}
+				}
+				else
+				{
+					tabPanel.tabs('select',title);
+				}
+			}
+			function removeTab(){
+				var tabPanel = $('#xu-tabs');
+				var tab = tabPanel.tabs('getSelected');
+				if (tab){
+					var index = tabPanel.tabs('getTabIndex', tab);
+					tabPanel.tabs('close', index);
+				}
+			}
+    	</script>
+    	
+    	
+	</body>
+</html>
